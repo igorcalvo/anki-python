@@ -1,17 +1,18 @@
 import genanki
-import requests
 import re
 from pathlib import Path
+from gtts import gTTS
 from deep_translator import GoogleTranslator
 
 # -----------------------------
 # CONFIG
 # -----------------------------
+INPUT_FILE = "clean.txt"
 OUTPUT_DECK = "english_vocab.apkg"
+
 MEDIA_DIR = Path("media")
 MEDIA_DIR.mkdir(exist_ok=True)
 
-NUM_WORDS = 5
 STATIC_IMAGE_PATH = Path("./images/testimage.jpg")
 
 translator = GoogleTranslator(source="en", target="pt")
@@ -19,49 +20,50 @@ translator = GoogleTranslator(source="en", target="pt")
 # -----------------------------
 # HELPERS
 # -----------------------------
-def download_file(url, filename):
+def translate(text):
     try:
-        r = requests.get(url, timeout=10)
-        if r.status_code == 200:
-            with open(filename, "wb") as f:
-                f.write(r.content)
-            return True
-    except Exception as e:
-        print("Download failed:", e)
-    return False
+        return translator.translate(text[:200])
+    except:
+        return text
 
 
-def translate_word(word):
-    try:
-        return translator.translate(word)
-    except Exception as e:
-        print("Translation error:", e)
-        return f"[PT] {word}"
+def make_audio(word):
+    safe = re.sub(r"[^a-zA-Z0-9]", "_", word)
+    filename = MEDIA_DIR / f"{safe}.mp3"
+
+    if not filename.exists():
+        try:
+            tts = gTTS(word)
+            tts.save(filename)
+        except Exception as e:
+            print("TTS error:", e)
+            return ""
+
+    return filename.name
 
 
 # -----------------------------
-# PARSE FILE (SIMPLIFIED)
+# LOAD DATA
 # -----------------------------
+with open(INPUT_FILE, "r", encoding="utf-8") as f:
+    lines = f.readlines()
+
 words_data = []
 
-with open("./content.txt", "r", encoding="utf-8") as f:
-    for line in f:
-        line = line.strip()
+for line in lines:
+    try:
+        word, word_type, sentences = line.strip().split("|")
 
-        # match: "word (type)"
-        match = re.match(r"^([a-zA-Z\-]+)\s*\(([^)]+)\)", line)
+        sentence_list = [s.strip() for s in sentences.split(";") if s.strip()]
 
-        if match:
-            word = match.group(1)
-            word_type = match.group(2)
+        words_data.append({
+            "word": word,
+            "type": word_type,
+            "sentences": sentence_list[:3]
+        })
 
-            words_data.append({
-                "word": word,
-                "type": word_type
-            })
-
-        if len(words_data) >= NUM_WORDS:
-            break
+    except:
+        continue
 
 
 # -----------------------------
@@ -69,39 +71,62 @@ with open("./content.txt", "r", encoding="utf-8") as f:
 # -----------------------------
 model = genanki.Model(
     1234567890,
-    "Simple English Model",
+    "Clean English Model",
     fields=[
         {"name": "Word"},
         {"name": "Type"},
+        {"name": "Audio"},
         {"name": "Translation"},
+        {"name": "Examples"},
         {"name": "Image"},
     ],
     templates=[
         {
-            "name": "Card 1",
+            "name": "Card",
             "qfmt": """
-                <h2>{{Word}}</h2>
-                <i>({{Type}})</i>
+                <div class="center">
+                    <h1>{{Word}}</h1>
+                    <div class="type">({{Type}})</div>
+                    <br>
+                    {{Audio}}
+                </div>
             """,
             "afmt": """
                 {{FrontSide}}
-                <hr id="answer">
+                <hr>
 
-                <b>Translation:</b><br>
-                {{Translation}}<br><br>
+                <b>{{Translation}}</b><br><br>
+
+                {{Examples}}<br><br>
 
                 {{Image}}
             """,
         }
     ],
+    css="""
+    .card {
+        font-family: Arial;
+        text-align: center;
+    }
+    .center {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        height: 100vh;
+    }
+    .type {
+        color: gray;
+        font-size: 18px;
+    }
+    """
 )
 
-deck = genanki.Deck(1234567891, "English Vocab Deck")
+deck = genanki.Deck(1234567891, "English Deck")
 
 media_files = []
 
 # -----------------------------
-# STATIC IMAGE
+# IMAGE SETUP
 # -----------------------------
 image_filename = MEDIA_DIR / "shared.jpg"
 
@@ -112,22 +137,38 @@ if not image_filename.exists():
 media_files.append(str(image_filename))
 image_field = f'<img src="{image_filename.name}">'
 
-
 # -----------------------------
 # CREATE NOTES
 # -----------------------------
-for item in words_data:
+for item in words_data[:20]:  # limit for testing
     word = item["word"]
     word_type = item["type"]
+    sentences = item["sentences"]
 
-    translation = translate_word(word)
+    # 🔊 audio
+    audio_file = make_audio(word)
+    audio_field = f"[sound:{audio_file}]" if audio_file else ""
+
+    if audio_file:
+        media_files.append(str(MEDIA_DIR / audio_file))
+
+    # 🌍 translation
+    translation = translate(f"{word} ({word_type})")
+
+    # 💬 examples
+    example_html = ""
+    for s in sentences:
+        pt = translate(s)
+        example_html += f"{s}<br><i>{pt}</i><br><br>"
 
     note = genanki.Note(
         model=model,
         fields=[
             word,
             word_type,
+            audio_field,
             translation,
+            example_html,
             image_field,
         ],
     )
