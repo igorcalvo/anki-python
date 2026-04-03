@@ -22,8 +22,10 @@ translator = GoogleTranslator(source="en", target="pt")
 # -----------------------------
 def translate(text):
     try:
+        print(f"   🌍 Translating: {text[:40]}...")
         return translator.translate(text[:200])
-    except:
+    except Exception as e:
+        print("   ❌ Translation error:", e)
         return text
 
 
@@ -33,10 +35,11 @@ def make_audio(word):
 
     if not filename.exists():
         try:
+            print(f"   🔊 Generating audio: {word}")
             tts = gTTS(word)
             tts.save(filename)
         except Exception as e:
-            print("TTS error:", e)
+            print("   ❌ TTS error:", e)
             return ""
 
     return filename.name
@@ -92,14 +95,17 @@ model = genanki.Model(
                 </div>
             """,
             "afmt": """
-                {{FrontSide}}
-                <hr>
+                <div>
+                    <h2>{{Word}} ({{Type}})</h2>
+                    <br>
+                    <b>{{Translation}}</b>
+                    <br><br>
 
-                <b>{{Translation}}</b><br><br>
+                    {{Examples}}
 
-                {{Examples}}<br><br>
-
-                {{Image}}
+                    <br>
+                    {{Image}}
+                </div>
             """,
         }
     ],
@@ -140,10 +146,12 @@ image_field = f'<img src="{image_filename.name}">'
 # -----------------------------
 # CREATE NOTES
 # -----------------------------
-for item in words_data[:20]:  # limit for testing
+for idx, item in enumerate(words_data[:20], 1):
     word = item["word"]
     word_type = item["type"]
     sentences = item["sentences"]
+
+    print(f"\n=== [{idx}] Processing: {word} ===")
 
     # 🔊 audio
     audio_file = make_audio(word)
@@ -152,7 +160,7 @@ for item in words_data[:20]:  # limit for testing
     if audio_file:
         media_files.append(str(MEDIA_DIR / audio_file))
 
-    # 🌍 translation
+    # 🌍 translation (word)
     translation = translate(f"{word} ({word_type})")
 
     # 💬 examples
@@ -175,6 +183,7 @@ for item in words_data[:20]:  # limit for testing
 
     deck.add_note(note)
 
+    print(f"✅ Done: {word}")
 
 # -----------------------------
 # EXPORT
@@ -183,4 +192,4 @@ package = genanki.Package(deck)
 package.media_files = media_files
 package.write_to_file(OUTPUT_DECK)
 
-print("Deck generated:", OUTPUT_DECK)
+print("\n🎉 Deck generated:", OUTPUT_DECK)
