@@ -1,6 +1,7 @@
 import genanki
 import re
 import requests
+import time
 from pathlib import Path
 from gtts import gTTS
 from deep_translator import GoogleTranslator
@@ -8,7 +9,7 @@ from deep_translator import GoogleTranslator
 # -----------------------------
 # CONFIG
 # -----------------------------
-INPUT_FILE = "clean.txt"
+INPUT_FILE = "processed.txt"
 OUTPUT_DECK = "english_vocab.apkg"
 
 MEDIA_DIR = Path("media")
@@ -43,6 +44,7 @@ def make_audio(word):
 
     return filename.name
 
+
 def highlight_word(sentence, word):
     return re.sub(
         rf"\b({re.escape(word)})\b",
@@ -51,9 +53,11 @@ def highlight_word(sentence, word):
         flags=re.IGNORECASE
     )
 
+
 def load_pexels_key():
     with open("./pexelskey", "r") as f:
         return f.read().strip()
+
 
 PEXELS_API_KEY = load_pexels_key()
 
@@ -61,44 +65,44 @@ def get_image(word, filename):
     if filename.exists():
         return True
 
-    try:
-        print(f"   🖼️ Fetching image: {word}")
+    for attempt in range(3):  # retry
+        try:
+            print(f"   🖼️ Fetching image: {word}")
 
-        url = "https://api.pexels.com/v1/search"
+            url = "https://api.pexels.com/v1/search"
 
-        headers = {
-            "Authorization": PEXELS_API_KEY
-        }
+            headers = {"Authorization": PEXELS_API_KEY}
+            params = {"query": word, "per_page": 1}
 
-        params = {
-            "query": word,
-            "per_page": 1
-        }
+            r = requests.get(url, headers=headers, params=params, timeout=10)
 
-        r = requests.get(url, headers=headers, params=params, timeout=10)
+            if r.status_code == 429:
+                print("   ⏳ Rate limited, retrying...")
+                time.sleep(1.5 * (attempt + 1))
+                continue
 
-        if r.status_code != 200:
-            print("   ❌ Pexels API error:", r.status_code)
-            return False
+            if r.status_code != 200:
+                print("   ❌ Pexels API error:", r.status_code)
+                return False
 
-        data = r.json()
+            data = r.json()
 
-        if not data.get("photos"):
-            print("   ⚠️ No image found")
-            return False
+            if not data.get("photos"):
+                print("   ⚠️ No image found")
+                return False
 
-        img_url = data["photos"][0]["src"]["medium"]
+            img_url = data["photos"][0]["src"]["medium"]
+            img_data = requests.get(img_url, timeout=10).content
 
-        img_data = requests.get(img_url, timeout=10).content
+            with open(filename, "wb") as f:
+                f.write(img_data)
 
-        with open(filename, "wb") as f:
-            f.write(img_data)
+            return True
 
-        return True
+        except Exception as e:
+            print("   ❌ Image error:", e)
 
-    except Exception as e:
-        print("   ❌ Image error:", e)
-        return False
+    return False
 
 def prepare_image(word, media_files):
     safe_word = re.sub(r"[^a-zA-Z0-9]", "_", word)
@@ -109,7 +113,6 @@ def prepare_image(word, media_files):
             media_files.append(str(image_filename))
         return f'<img src="{image_filename.name}">'
 
-    # fallback (optional but recommended)
     fallback = MEDIA_DIR / "fallback.jpg"
 
     if not fallback.exists():
@@ -125,30 +128,34 @@ def prepare_image(word, media_files):
 
     return f'<img src="{fallback.name}">'
 
+
 # -----------------------------
 # LOAD DATA
 # -----------------------------
-with open(INPUT_FILE, "r", encoding="utf-8") as f:
-    lines = f.readlines()
+def load_words():
+    with open(INPUT_FILE, "r", encoding="utf-8") as f:
+        lines = f.readlines()
 
-words_data = []
+    data = []
 
-for line in lines:
-    try:
-        word, word_type, sentences = line.strip().split("|")
+    for line in lines:
+        try:
+            word, word_type, sentences = line.strip().split("|")
 
-        sentence_list = [s.strip() for s in sentences.split(";") if s.strip()]
+            sentence_list = [s.strip() for s in sentences.split(";") if s.strip()]
 
-        words_data.append({
-            "word": word,
-            "type": word_type,
-            "sentences": sentence_list[:3]
-        })
+            data.append({
+                "word": word,
+                "type": word_type,
+                "sentences": sentence_list[:3]
+            })
 
-    except:
-        raise
-        continue
+        except:
+            continue
 
+    return data
+
+words_data = load_words()
 
 # -----------------------------
 # MODEL
@@ -175,8 +182,16 @@ model = genanki.Model(
                     {{Audio}}
                 </div>
             """,
-            "afmt" : """
+            "afmt": """
             <div class="answer">
+            
+                <div class="answer-header">
+                    <strong>{{Word}}</strong> ({{Type}})
+                    <br>
+                    {{Audio}}
+                </div>
+            
+                <hr>
             
                 <div class="translation">
                     {{Translation}}
@@ -194,10 +209,7 @@ model = genanki.Model(
         }
     ],
     css="""
-    .card {
-        font-family: Arial;
-    }
-    
+    .card { font-family: Arial; }
     .center {
         display: flex;
         flex-direction: column;
@@ -205,64 +217,47 @@ model = genanki.Model(
         height: 100vh;
         text-align: center;
     }
-    
-    .type {
-        color: gray;
-        font-size: 18px;
-    }
-    
-    /* ANSWER SIDE */
-    .answer {
-        text-align: left;
-        padding: 10px;
-    }
-    
+    .type { color: gray; font-size: 18px; }
+    .answer { text-align: left; padding: 10px; }
     .translation {
         font-size: 28px;
         font-weight: bold;
         text-align: center;
         margin-bottom: 20px;
     }
-    
-    .examples {
-        font-size: 18px;
-        line-height: 1.6;
+    .examples { font-size: 18px; line-height: 1.6; }
+    .highlight { color: #ff5555; font-weight: bold; }
+    .answer-header {
+        text-align: center;
+        font-size: 20px;
+        margin-bottom: 10px;
     }
-    
-    .highlight {
-        color: #ff5555;
-        font-weight: bold;
-    }
+    .answer-header strong { font-size: 24px; }
     """
 )
 
-deck = genanki.Deck(1234567891, "English Deck")
-
-media_files = []
-
 # -----------------------------
-# CREATE NOTES
+# CORE LOGIC (REUSABLE)
 # -----------------------------
-for idx, item in enumerate(words_data[:20], 1):
+def process_word(item, idx):
     word = item["word"]
     word_type = item["type"]
     sentences = item["sentences"]
 
     print(f"\n=== [{idx}] Processing: {word} ===")
-    # 🖼️image
-    image_field = prepare_image(word, media_files)
 
-    # 🔊 audio
+    local_media = []
+
+    image_field = prepare_image(word, local_media)
+
     audio_file = make_audio(word)
     audio_field = f"[sound:{audio_file}]" if audio_file else ""
 
     if audio_file:
-        media_files.append(str(MEDIA_DIR / audio_file))
+        local_media.append(str(MEDIA_DIR / audio_file))
 
-    # 🌍 translation (word)
     translation = translate(word)
 
-    # 💬 examples
     example_html = ""
     for s in sentences:
         highlighted = highlight_word(s, word)
@@ -287,15 +282,38 @@ for idx, item in enumerate(words_data[:20], 1):
             image_field,
         ],
     )
-    deck.add_note(note)
 
     print(f"✅ Done: {word}")
 
-# -----------------------------
-# EXPORT
-# -----------------------------
-package = genanki.Package(deck)
-package.media_files = media_files
-package.write_to_file(OUTPUT_DECK)
+    return note, local_media
 
-print("\n🎉 Deck generated:", OUTPUT_DECK)
+
+# -----------------------------
+# SEQUENTIAL RUNNER
+# -----------------------------
+def run_sequential(limit=20):
+    deck = genanki.Deck(1234567891, "English Deck")
+    media_files = []
+
+    for idx, item in enumerate(words_data[:limit], 1):
+        note, local_media = process_word(item, idx)
+
+        deck.add_note(note)
+
+        for m in local_media:
+            if m not in media_files:
+                media_files.append(m)
+
+    package = genanki.Package(deck)
+    package.media_files = media_files
+    package.write_to_file(OUTPUT_DECK)
+
+    print("\n🎉 Deck generated:", OUTPUT_DECK)
+
+
+# -----------------------------
+# ENTRYPOINT
+# -----------------------------
+if __name__ == "__main__":
+    print("Running sequential mode (debug)...")
+    run_sequential(20)
