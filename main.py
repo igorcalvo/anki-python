@@ -9,11 +9,11 @@ from deep_translator import GoogleTranslator
 # -----------------------------
 # CONFIG
 # -----------------------------
-INPUT_FILE = "processed.txt"
-OUTPUT_DECK = "en_pt_1000_beginner.apkg"
+INPUT_FILE = "processed3000.txt"
+OUTPUT_DECK = "en_pt_3000_beginner.apkg"
 DECK_ID = 1876543210
-DECK_NAME = "English-Portugues ~1000 Beginner Common Words/Iniciante Palarvras Comuns"
-LIMIT = 1000
+DECK_NAME = "English-Portugues ~3000 Common Words/Palarvras Comuns"
+LIMIT = 3200
 
 MEDIA_DIR = Path("media")
 MEDIA_DIR.mkdir(exist_ok=True)
@@ -81,7 +81,7 @@ def get_image(word, filename):
 
             if r.status_code == 429:
                 print("   ⏳ Rate limited, retrying...")
-                time.sleep(1.5 * (attempt + 1))
+                time.sleep(10 * (attempt + 1))
                 continue
 
             if r.status_code != 200:
@@ -319,4 +319,4 @@ def run_sequential(limit=LIMIT):
 # -----------------------------
 if __name__ == "__main__":
     print("Running sequential mode (debug)...")
-    run_sequential(20)
+    run_sequential(LIMIT)
