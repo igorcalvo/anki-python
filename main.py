@@ -10,7 +10,10 @@ from deep_translator import GoogleTranslator
 # CONFIG
 # -----------------------------
 INPUT_FILE = "processed.txt"
-OUTPUT_DECK = "english_vocab.apkg"
+OUTPUT_DECK = "en_pt_1000_beginner.apkg"
+DECK_ID = 1876543210
+DECK_NAME = "English-Portugues ~1000 Beginner Common Words/Iniciante Palarvras Comuns"
+LIMIT = 1000
 
 MEDIA_DIR = Path("media")
 MEDIA_DIR.mkdir(exist_ok=True)
@@ -291,8 +294,8 @@ def process_word(item, idx):
 # -----------------------------
 # SEQUENTIAL RUNNER
 # -----------------------------
-def run_sequential(limit=20):
-    deck = genanki.Deck(1234567891, "English Deck")
+def run_sequential(limit=LIMIT):
+    deck = genanki.Deck(DECK_ID, DECK_NAME)
     media_files = []
 
     for idx, item in enumerate(words_data[:limit], 1):

@@ -1,9 +1,5 @@
-AMAZING WORK!! just a few adjustment I'd like made:
+dependencies
+fresh install
+upload deck
 
-1. instead of just translating the word at the first line and copying the type (), please just add the translation in bold and mayube in a bigger font too.
-
-2. for the phrases, it looks hard to read since it's centered. I'm guessing they can be rendered at the left with some spacing.
-
-3. while at it, please high light the word in the phrases with bold or a different color please.
-
-do you have any recommendation on a python package or api I could use to get images? that's the only missing piece of the puzzle.
+kanji software

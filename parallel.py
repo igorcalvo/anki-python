@@ -11,7 +11,7 @@ from main import (
 # CONFIG
 # -----------------------------
 OUTPUT_DECK = "en_pt_1000_beginner.apkg"
-MAX_WORKERS = 6
+MAX_WORKERS = 2
 
 # 🔥 generate once and KEEP THIS VALUE
 # random.randrange(1 << 30, 1 << 31)
