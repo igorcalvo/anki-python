@@ -1,5 +1,6 @@
 import genanki
 import re
+import requests
 from pathlib import Path
 from gtts import gTTS
 from deep_translator import GoogleTranslator
@@ -12,8 +13,6 @@ OUTPUT_DECK = "english_vocab.apkg"
 
 MEDIA_DIR = Path("media")
 MEDIA_DIR.mkdir(exist_ok=True)
-
-STATIC_IMAGE_PATH = Path("./images/testimage.jpg")
 
 translator = GoogleTranslator(source="en", target="pt")
 
@@ -44,6 +43,62 @@ def make_audio(word):
 
     return filename.name
 
+def highlight_word(sentence, word):
+    return re.sub(
+        rf"\b({re.escape(word)})\b",
+        r'<span class="highlight">\1</span>',
+        sentence,
+        flags=re.IGNORECASE
+    )
+
+def load_pexels_key():
+    with open("./pexelskey", "r") as f:
+        return f.read().strip()
+
+PEXELS_API_KEY = load_pexels_key()
+
+def get_image(word, filename):
+    if filename.exists():
+        return True
+
+    try:
+        print(f"   🖼️ Fetching image: {word}")
+
+        url = "https://api.pexels.com/v1/search"
+
+        headers = {
+            "Authorization": PEXELS_API_KEY
+        }
+
+        params = {
+            "query": word,
+            "per_page": 1
+        }
+
+        r = requests.get(url, headers=headers, params=params, timeout=10)
+
+        if r.status_code != 200:
+            print("   ❌ Pexels API error:", r.status_code)
+            return False
+
+        data = r.json()
+
+        if not data.get("photos"):
+            print("   ⚠️ No image found")
+            return False
+
+        img_url = data["photos"][0]["src"]["medium"]
+
+        img_data = requests.get(img_url, timeout=10).content
+
+        with open(filename, "wb") as f:
+            f.write(img_data)
+
+        return True
+
+    except Exception as e:
+        print("   ❌ Image error:", e)
+        return False
 
 # -----------------------------
 # LOAD DATA
@@ -94,35 +149,63 @@ model = genanki.Model(
                     {{Audio}}
                 </div>
             """,
-            "afmt": """
-                <div>
-                    <h2>{{Word}} ({{Type}})</h2>
-                    <br>
-                    <b>{{Translation}}</b>
-                    <br><br>
-
-                    {{Examples}}
-
-                    <br>
-                    {{Image}}
+            "afmt" : """
+            <div class="answer">
+            
+                <div class="translation">
+                    {{Translation}}
                 </div>
+            
+                <div class="examples">
+                    {{Examples}}
+                </div>
+            
+                <br>
+                {{Image}}
+            
+            </div>
             """,
         }
     ],
     css="""
     .card {
         font-family: Arial;
-        text-align: center;
     }
+    
     .center {
         display: flex;
         flex-direction: column;
         justify-content: center;
         height: 100vh;
+        text-align: center;
     }
+    
     .type {
         color: gray;
         font-size: 18px;
+    }
+    
+    /* ANSWER SIDE */
+    .answer {
+        text-align: left;
+        padding: 10px;
+    }
+    
+    .translation {
+        font-size: 28px;
+        font-weight: bold;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    
+    .examples {
+        font-size: 18px;
+        line-height: 1.6;
+    }
+    
+    .highlight {
+        color: #ff5555;
+        font-weight: bold;
     }
     """
 )
@@ -161,13 +244,21 @@ for idx, item in enumerate(words_data[:20], 1):
         media_files.append(str(MEDIA_DIR / audio_file))
 
     # 🌍 translation (word)
-    translation = translate(f"{word} ({word_type})")
+    translation = translate(word)
 
     # 💬 examples
     example_html = ""
     for s in sentences:
+        highlighted = highlight_word(s, word)
         pt = translate(s)
-        example_html += f"{s}<br><i>{pt}</i><br><br>"
+
+        example_html += f"""
+        <div>
+            {highlighted}<br>
+            <i>{pt}</i>
+        </div>
+        <br>
+        """
 
     note = genanki.Note(
         model=model,
