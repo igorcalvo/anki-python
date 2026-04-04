@@ -100,6 +100,31 @@ def get_image(word, filename):
         print("   ❌ Image error:", e)
         return False
 
+def prepare_image(word, media_files):
+    safe_word = re.sub(r"[^a-zA-Z0-9]", "_", word)
+    image_filename = MEDIA_DIR / f"{safe_word}.jpg"
+
+    if get_image(word, image_filename):
+        if str(image_filename) not in media_files:
+            media_files.append(str(image_filename))
+        return f'<img src="{image_filename.name}">'
+
+    # fallback (optional but recommended)
+    fallback = MEDIA_DIR / "fallback.jpg"
+
+    if not fallback.exists():
+        try:
+            with open("./images/testimage.jpg", "rb") as src, open(fallback, "wb") as dst:
+                dst.write(src.read())
+        except Exception as e:
+            print("   ❌ Fallback image error:", e)
+            return ""
+
+    if str(fallback) not in media_files:
+        media_files.append(str(fallback))
+
+    return f'<img src="{fallback.name}">'
+
 # -----------------------------
 # LOAD DATA
 # -----------------------------
@@ -121,6 +146,7 @@ for line in lines:
         })
 
     except:
+        raise
         continue
 
 
@@ -215,18 +241,6 @@ deck = genanki.Deck(1234567891, "English Deck")
 media_files = []
 
 # -----------------------------
-# IMAGE SETUP
-# -----------------------------
-image_filename = MEDIA_DIR / "shared.jpg"
-
-if not image_filename.exists():
-    with open(STATIC_IMAGE_PATH, "rb") as src, open(image_filename, "wb") as dst:
-        dst.write(src.read())
-
-media_files.append(str(image_filename))
-image_field = f'<img src="{image_filename.name}">'
-
-# -----------------------------
 # CREATE NOTES
 # -----------------------------
 for idx, item in enumerate(words_data[:20], 1):
@@ -235,6 +249,8 @@ for idx, item in enumerate(words_data[:20], 1):
     sentences = item["sentences"]
 
     print(f"\n=== [{idx}] Processing: {word} ===")
+    # 🖼️image
+    image_field = prepare_image(word, media_files)
 
     # 🔊 audio
     audio_file = make_audio(word)
@@ -271,7 +287,6 @@ for idx, item in enumerate(words_data[:20], 1):
             image_field,
         ],
     )
-
     deck.add_note(note)
 
     print(f"✅ Done: {word}")
