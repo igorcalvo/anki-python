@@ -13,7 +13,7 @@ INPUT_FILE = "./clean.txt"
 OUTPUT_FILE = "./processed.txt"
 
 TARGET_SIZE = 1000
-NUM_TOPICS = 20  # tweak (8–20 works well)
+NUM_TOPICS = 15  # tweak (8–20 works well)
 
 # -----------------------------
 # HELPERS
@@ -79,7 +79,35 @@ def semantic_order(cluster_items, all_words, embeddings):
         if found:
             continue
 
-        # 🔥 PRIORITY 2: semantic similarity
+        # 🔥 PRIORITY 1: TRUE antonyms (auto-detected)
+        if current_word in ANTONYM_MAP:
+            targets = ANTONYM_MAP[current_word]
+        
+            for i, (_, w, _) in enumerate(remaining):
+                if w in targets:
+                    current = remaining.pop(i)
+                    ordered.append(current)
+                    found = True
+                    break
+        
+            if found:
+                continue
+        
+        
+        # 🔥 PRIORITY 2: WordNet relations
+        related = get_related_words(current_word)
+        
+        for i, (_, w, _) in enumerate(remaining):
+            if w in related:
+                current = remaining.pop(i)
+                ordered.append(current)
+                found = True
+                break
+        
+        if found:
+            continue
+
+        # 🔥 PRIORITY 3: semantic similarity
         current_vec = embeddings[word_to_index[current_word]]
 
         best_idx = 0
@@ -145,6 +173,58 @@ words = [w for _, w, _ in scored]
 print("🧠 Encoding words...")
 embeddings = model.encode(words, show_progress_bar=True)
 
+# -----------------------------
+# BUILD ANTONYM MAP (AUTO)
+# -----------------------------
+print("⚔️ Detecting opposites automatically...")
+
+ANTONYM_MAP = {}
+
+SIMILARITY_THRESHOLD = 0.65  # high similarity
+MAX_NEIGHBORS = 10
+
+word_to_index = {w: i for i, w in enumerate(words)}
+
+for i, word in enumerate(words):
+    vec = embeddings[i]
+
+    similarities = []
+
+    for j, other in enumerate(words):
+        if i == j:
+            continue
+
+        other_vec = embeddings[j]
+
+        cosine = np.dot(vec, other_vec) / (
+            np.linalg.norm(vec) * np.linalg.norm(other_vec)
+        )
+
+        if cosine > SIMILARITY_THRESHOLD:
+            similarities.append((cosine, other))
+
+    # sort by similarity
+    similarities.sort(reverse=True)
+
+    # take top neighbors
+    neighbors = [w for _, w in similarities[:MAX_NEIGHBORS]]
+
+    # check WordNet antonyms among neighbors
+    antonyms = set()
+
+    wn_related = get_related_words(word)
+
+    for n in neighbors:
+        if n in wn_related:
+            continue  # skip synonyms
+
+        # 🔥 heuristic: similar but NOT synonym → likely contrast
+        antonyms.add(n)
+
+    if antonyms:
+        ANTONYM_MAP[word] = antonyms
+
+print(f"⚔️ Found antonyms for {len(ANTONYM_MAP)} words")
 
 # -----------------------------
 # CLUSTERING
