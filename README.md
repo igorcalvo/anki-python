@@ -1,55 +1,63 @@
 *English Vocabulary Deck (PT-BR)*
 
-This deck was created to help beginners build a strong and practical English vocabulary foundation.
+Learn the most useful English words first — organized the way your brain learns.
 
-Each card includes:
+A practical English vocabulary deck focused on the most useful ~1000 words for beginners.
 
-* The English word and its grammatical type
-* Native-like pronunciation audio
-* A Portuguese translation
-* Example sentences with translations
-* A representative image to reinforce memory
+*What makes this deck different*:
+- Words are *ordered by frequency* (learn what matters first)
+- *Grouped by meaning* (similar and related words appear close together)
+- Designed for a *smooth learning progression* (from easier → more complex)
 
-This deck is designed for beginners and early intermediate learners who want to:
+*Each card includes*:
+- Word + grammatical type  
+- Pronunciation audio  
+- Portuguese translation  
+- Example sentences (with translations)  
+- Image for memory reinforcement  
 
-* Learn vocabulary in context
-* Improve listening and reading
-* Build long-term retention through spaced repetition
+*Ideal for beginners who want to*:
+- Learn faster by focusing on high-frequency words  
+- Understand vocabulary in context  
+- Build long-term retention with spaced repetition  
 
-Inspired by:
+*Inspired by*:
+- 3000 Common Words English – Tradução Português
+- The Oxford 3000 Most Important Words in English
 
-* *3000 Common Words English – Tradução Português*
-* *The Oxford 3000: Most Important Words in English*
-
-Images are sourced from **Pexels**. All credit goes to their respective creators.
+Images sourced from *Pexels* (credits to respective authors).
 
 Enjoy your learning journey!
 
----------------------------------------------------------------------------------
+---
 
 *Deck de Vocabulário em Inglês (PT-BR)*
 
-Este deck foi criado para ajudar iniciantes a construir uma base sólida e prática de vocabulário em inglês.
+Aprenda primeiro as palavras mais úteis — organizadas do jeito que faz sentido para o cérebro.
 
-Cada card contém:
+Um deck prático focado nas ~1000 palavras mais úteis do inglês para iniciantes.
 
-* A palavra em inglês e sua classe gramatical
-* Áudio de pronúncia
-* Tradução em português
-* Frases de exemplo com tradução
-* Uma imagem para auxiliar na memorização
+*O diferencial deste deck*:
+- Palavras *ordenadas por frequência* (você aprende o que mais importa primeiro)
+- *Agrupadas por significado* (palavras relacionadas ficam próximas)
+- Organização pensada para uma *progressão natural de aprendizado*
 
-Este deck é ideal para iniciantes e alunos de nível básico/intermediário que desejam:
+*Cada card contém*:
+- Palavra + classe gramatical  
+- Áudio de pronúncia  
+- Tradução em português  
+- Frases de exemplo (com tradução)  
+- Imagem para ajudar na memorização  
 
-* Aprender vocabulário em contexto
-* Melhorar compreensão auditiva e leitura
-* Fixar o conteúdo com repetição espaçada
+*Ideal para quem quer*:
+- Aprender mais rápido com vocabulário relevante  
+- Entender palavras em contexto  
+- Fixar o conteúdo com repetição espaçada  
 
-Inspirado por:
+*Inspirado por*:
+- 3000 Common Words English – Tradução Português
+- The Oxford 3000 Most Important Words in English
 
-* *3000 Common Words English – Tradução Português*
-* *The Oxford 3000: Most Important Words in English*
-
-As imagens foram obtidas do **Pexels**. Todos os créditos pertencem aos respectivos autores.
+Imagens do *Pexels* (créditos aos autores).
 
 Bons estudos!

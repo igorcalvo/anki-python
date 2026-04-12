@@ -13,8 +13,8 @@ nltk.data.path.append('/home/calvo/nltk_data')
 INPUT_FILE = "./clean.txt"
 OUTPUT_FILE = "./processed.txt"
 
-TARGET_SIZE = 1000
-NUM_TOPICS = 6
+TARGET_SIZE = 3000
+NUM_TOPICS = 12
 
 # -----------------------------
 # HELPERS
@@ -161,9 +161,10 @@ scored = []
 for line in lines:
     word = extract_word(line)
     score = difficulty(word)
-
-    if score < 2.5:
-        continue
+    
+    # Fix to not having missing lines
+    # if score < 2.5:
+    #     continue
 
     scored.append((score, word, line))
 
@@ -226,9 +227,11 @@ for (score, word, line), label in zip(scored, labels):
 # -----------------------------
 print("🔗 Ordering words inside each topic...")
 
+original_count = sum(len(v) for v in clusters.values())
 for label in clusters:
     clusters[label] = semantic_order(clusters[label], words, embeddings)
-
+ordered_count = sum(len(v) for v in clusters.values())
+print(f"Before: {original_count}, After: {ordered_count}")
 
 # -----------------------------
 # ORDER TOPICS

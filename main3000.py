@@ -9,11 +9,11 @@ from deep_translator import GoogleTranslator
 # -----------------------------
 # CONFIG
 # -----------------------------
-INPUT_FILE = "processed3000.txt"
+INPUT_FILE = "processed.txt"
 OUTPUT_DECK = "en_pt_3000_beginner.apkg"
 DECK_ID = 1876543210
 DECK_NAME = "English-Portugues ~3000 Common Words/Palarvras Comuns"
-LIMIT = 3200
+LIMIT = 3000
 
 MEDIA_DIR = Path("media")
 MEDIA_DIR.mkdir(exist_ok=True)
