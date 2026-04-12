@@ -1,0 +1,5 @@
+English-Portugues ~1000 Common Words - Beginner/Iniciante
+
+english portuguese 1000 palavras ordenadas sorted word words
+
+https://github.com/igorcalvo/anki-python
